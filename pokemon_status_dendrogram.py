@@ -5,6 +5,9 @@ from scipy.cluster.hierarchy import dendrogram
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import AgglomerativeClustering
 
+# クラスタ数を指定
+n_clusters = 3  # ここでクラスタ数を指定します
+
 # Pokemon.csvを読み込みます
 df = pd.read_csv('Pokemon.csv')
 
@@ -13,6 +16,7 @@ df = pd.read_csv('Pokemon.csv')
 # ここではステータス値を含むカラムを使用する例です
 features = ['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']
 data = df[features]
+names = df['Name']
 
 # データのスケーリング
 scaler = StandardScaler()
@@ -21,9 +25,17 @@ scaled_data = scaler.fit_transform(data)
 # 階層的クラスタリングモデルを定義します
 model = AgglomerativeClustering(metric='euclidean', 
                                 linkage='ward', 
-                                distance_threshold=0, 
-                                n_clusters=None)
+                                n_clusters=n_clusters)
 model = model.fit(scaled_data)
+
+# クラスタリングのラベルを取得
+labels = model.labels_
+
+# クラスタリング結果をデータフレームに追加
+df['Cluster'] = labels
+
+# 各ポケモンがどのクラスタに属するかをCSVファイルに保存
+df.to_csv('pokemon_clusters.csv', index=False)
 
 # デンドログラムをプロットする関数
 def plot_dendrogram(model, **kwargs):
@@ -43,9 +55,16 @@ def plot_dendrogram(model, **kwargs):
     # デンドログラムをプロットします
     dendrogram(linkage_matrix, **kwargs)
 
+# 階層的クラスタリングモデルを再定義（デンドログラム用）
+model = AgglomerativeClustering(metric='euclidean', 
+                                linkage='ward', 
+                                distance_threshold=0, 
+                                n_clusters=None)
+model = model.fit(scaled_data)
+
 # デンドログラムをプロットします
 plt.figure(figsize=(10, 7))
-plot_dendrogram(model, truncate_mode='lastp', p=6)
+plot_dendrogram(model, truncate_mode='lastp', p=3, labels=names.values)
 plt.xlabel('Sample index or (cluster size)')
 plt.ylabel('Distance')
 plt.show()
